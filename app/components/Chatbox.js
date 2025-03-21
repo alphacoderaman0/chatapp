@@ -53,7 +53,7 @@ export default function ChatBox() {
         onChange={(e) => setInput(e.target.value)}
       />
       <button className="bg-blue-500 text-white p-2 w-full mt-2" onClick={sendMessage}>
-        Send
+        Send Request
       </button>
     </div>
   );
