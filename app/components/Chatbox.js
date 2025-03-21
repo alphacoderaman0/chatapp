@@ -11,54 +11,57 @@ export default function ChatBox() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    // Initialize socket connection
-    socketRef.current = io("http://localhost:3000", {
-      path: "/api/socket",
-      transports: ["websocket", "polling"],
+    axios.get("/api/socket").catch((err) => console.error("⚠️ Socket API Error:", err));
+
+    socketRef.current = io("http://localhost:3001", { transports: ["websocket"] });
+
+    socketRef.current.on("connect", () => {
+      console.log("✅ Connected to WebSocket Server");
     });
 
-    // Listen for new messages
+    // ✅ WebSocket se new message receive hone par update karo
     socketRef.current.on("receiveMessage", (msg) => {
-      setMessages((prev) => [...prev, msg]); // Append new messages at the end
+      console.log("📩 New Message Received:", msg);
+      setMessages((prevMessages) => [...prevMessages, msg]); // State update karo
     });
 
-    // Fetch previous messages from API
-    axios.get("/api/messages").then((res) => setMessages(res.data));
-
-    // Cleanup on unmount
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      socketRef.current.disconnect();
     };
   }, []);
 
-  // Auto-scroll to latest message
+  useEffect(() => {
+    axios.get("/api/messages")
+      .then((res) => setMessages(res.data))
+      .catch((err) => console.error("⚠️ Fetch Messages Error:", err));
+  }, []);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Send message function
   const sendMessage = async () => {
     if (!input.trim() || !username.trim()) return;
 
     const newMessage = { username, message: input };
 
-    // Emit message via WebSocket
+    // ✅ Emit WebSocket event
     socketRef.current.emit("newMessage", newMessage);
 
-    // Save message to database
+    // ✅ UI me update karne ke liye state update karo
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+
+    // ✅ Database me store karo
     try {
       await axios.post("/api/messages", newMessage);
       setInput("");
     } catch (error) {
-      console.error("Error sending message:", error.response?.data || error.message);
+      console.error("⚠️ Error saving message:", error);
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto p-4">
-      {/* Username Input */}
       <input
         className="border p-2 w-full mb-2"
         placeholder="Enter Username"
@@ -66,7 +69,6 @@ export default function ChatBox() {
         onChange={(e) => setUsername(e.target.value)}
       />
 
-      {/* Messages List */}
       <div className="border p-4 h-80 overflow-y-auto">
         {messages.map((msg, index) => (
           <p key={index}>
@@ -76,7 +78,6 @@ export default function ChatBox() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
       <input
         className="border p-2 w-full mt-2"
         placeholder="Type a message..."
@@ -84,10 +85,11 @@ export default function ChatBox() {
         onChange={(e) => setInput(e.target.value)}
       />
 
-      {/* Send Button */}
       <button className="bg-blue-500 text-white p-2 w-full mt-2" onClick={sendMessage}>
         Send Message
       </button>
     </div>
   );
 }
+
+

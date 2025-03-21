@@ -1,17 +1,14 @@
 import Message from "@/app/model/message";
 import { NextResponse } from "next/server";
-
+import connectDB from "@/app/lib/mongodb"; 
 export async function GET() {
   try {
-    await connectDB();
-    const messages = await Message.find().sort({ timestamp: -1 });
+    const messages = await Message.find().sort({ timestamp: 1 }); // Oldest to newest
     return NextResponse.json(messages, { status: 200 });
   } catch (error) {
-    console.error("GET Error:", error);
-    return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
+    return NextResponse.json({ error: "Error fetching messages" }, { status: 500 });
   }
 }
-
 export async function POST(req) {
   try {
     console.log("POST /api/messages called"); // Add this log
