@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
-import axios from "axios";
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([]);
@@ -11,7 +10,7 @@ export default function ChatBox() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    axios.get("/api/socket").catch((err) => console.error("⚠️ Socket API Error:", err));
+    fetch("/api/socket").catch((err) => console.error("⚠️ Socket API Error:", err));
 
     socketRef.current = io("http://localhost:3001", { transports: ["websocket"] });
 
@@ -31,8 +30,9 @@ export default function ChatBox() {
   }, []);
 
   useEffect(() => {
-    axios.get("/api/messages")
-      .then((res) => setMessages(res.data))
+    fetch("/api/messages")
+      .then((res) => res.json())
+      .then((data) => setMessages(data))
       .catch((err) => console.error("⚠️ Fetch Messages Error:", err));
   }, []);
 
@@ -51,9 +51,13 @@ export default function ChatBox() {
     // ✅ UI me update karne ke liye state update karo
     setMessages((prevMessages) => [...prevMessages, newMessage]);
 
-    // ✅ Database me store karo
+    // ✅ Database me store karo using fetch
     try {
-      await axios.post("/api/messages", newMessage);
+      await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMessage),
+      });
       setInput("");
     } catch (error) {
       console.error("⚠️ Error saving message:", error);
@@ -91,5 +95,3 @@ export default function ChatBox() {
     </div>
   );
 }
-
-
