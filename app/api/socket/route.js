@@ -1,19 +1,24 @@
 import { Server } from "socket.io";
 
-export default function handler(req, res) {
-  if (!res.socket.server.io) {
-    const io = new Server(res.socket.server, {
+export async function GET(req) {
+  if (!global.io) {
+    global.io = new Server(3001, {
       path: "/api/socket",
       addTrailingSlash: false,
     });
 
-    io.on("connection", (socket) => {
+    global.io.on("connection", (socket) => {
+      console.log("A user connected");
+
       socket.on("newMessage", (msg) => {
-        io.emit("receiveMessage", msg);
+        global.io.emit("receiveMessage", msg);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("A user disconnected");
       });
     });
-
-    res.socket.server.io = io;
   }
-  res.end();
+
+  return new Response("Socket initialized", { status: 200 });
 }
