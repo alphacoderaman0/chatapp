@@ -48,8 +48,8 @@ const connectDB = async () => {
   }
 };
 
-server.listen(3001, async () => {
-  console.log("🚀 Server running on port 3001");
+server.listen(3002, async () => {
+  console.log("🚀 Server running on port 3002");
   await connectDB();
 });
 

@@ -14,7 +14,7 @@ export default function ChatBox() {
 
   useEffect(() => {
     if (!socketRef.current) {
-      socketRef.current = io("http://localhost:3001", {
+      socketRef.current = io("http://localhost:3002", {
         transports: ["websocket", "polling"],
       });
 

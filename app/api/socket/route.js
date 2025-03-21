@@ -28,7 +28,7 @@ export async function GET() {
       });
     });
 
-    global.io.listen(3001); // Attach to port 3001
+    global.io.listen(3002); // Attach to port 3002
   } else {
     console.log("✅ WebSocket server already running.");
   }
