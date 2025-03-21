@@ -1,5 +1,5 @@
-import connectDB from "@/lib/mongodb";
-import Message from "@/models/Message";
+import connectDB from "@/app/lib/mongodb";
+import Message from "@/app/model/message";
 import { NextResponse } from "next/server";
 
 export async function GET() {
