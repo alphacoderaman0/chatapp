@@ -1,36 +1,44 @@
+
+
+import connectDB from "@/app/lib/mongodb";
 import Message from "@/app/model/message";
 import { NextResponse } from "next/server";
-import connectDB from "@/app/lib/mongodb"; 
+
 export async function GET() {
   try {
-    const messages = await Message.find().sort({ timestamp: 1 }); // Oldest to newest
+    await connectDB();
+    const messages = await Message.find().sort({ timestamp: -1 });
     return NextResponse.json(messages, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Error fetching messages" }, { status: 500 });
+    console.error("GET Error:", error);
+    return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
   }
 }
+
 export async function POST(req) {
   try {
-    console.log("POST /api/messages called"); // Add this log
+    console.log("POST /api/messages called");
     await connectDB();
 
-    // Ensure request body is valid
-    const body = await req.json().catch(() => null);
+    const body = await req.json();
     if (!body || !body.username || !body.message) {
-      console.error("Missing username or message");
       return NextResponse.json({ error: "Missing username or message" }, { status: 400 });
     }
 
-    console.log("Received Data:", body); // Log request body
+    console.log("Received Data:", body);
+    const newMessage = await Message.create(body);
 
-    const { username, message } = body;
-    const newMessage = await Message.create({ username, message });
+    // Emit message via WebSocket
+    if (global.io) {
+      global.io.emit("receiveMessage", newMessage);
+    }
 
-    console.log("Message Saved:", newMessage); // Log saved message
-
+    console.log("Message Saved:", newMessage);
     return NextResponse.json(newMessage, { status: 201 });
   } catch (error) {
     console.error("POST Error:", error);
     return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
   }
 }
+
+

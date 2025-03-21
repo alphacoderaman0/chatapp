@@ -1,29 +1,59 @@
+
+
 import { Server } from "socket.io";
-import { NextResponse } from "next/server";
 
-let io;
+export async function GET() {
+  if (!global.io) {
+    console.log("🔌 Initializing WebSocket server...");
 
-export function GET() {
-  if (!io) {
-    io = new Server(3001, {
-      cors: { origin: "http://localhost:3000", methods: ["GET", "POST"] },
+    global.io = new Server({
+      path: "/api/socket",
+      addTrailingSlash: false,
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+      },
     });
 
-    io.on("connection", (socket) => {
-      console.log("✅ New client connected:", socket.id);
+    global.io.on("connection", (socket) => {
+      console.log("⚡ A user connected");
 
-      socket.on("newMessage", (message) => {
-        console.log("📩 Message received:", message);
-
-        // ✅ Sabhi clients ko message bhejo (broadcast)
-        io.emit("receiveMessage", message);
+      socket.on("newMessage", (msg) => {
+        console.log("📩 New message received:", msg);
+        global.io.emit("receiveMessage", msg);
       });
 
       socket.on("disconnect", () => {
-        console.log("❌ Client disconnected:", socket.id);
+        console.log("❌ A user disconnected");
       });
     });
+
+    global.io.listen(3001); // Attach to port 3001
+  } else {
+    console.log("✅ WebSocket server already running.");
   }
 
-  return NextResponse.json({ message: "Socket Server Running" });
+  return new Response("Socket initialized", { status: 200 });
 }
+
+export async function POST(req) {
+  try {
+    const body = await req.json();
+    if (!body || !body.username || !body.message) {
+      return new Response(JSON.stringify({ error: "Missing username or message" }), { status: 400 });
+    }
+
+    console.log("Received Message:", body);
+
+    // Emit message to all connected clients
+    if (global.io) {
+      global.io.emit("receiveMessage", body);
+    }
+
+    return new Response(JSON.stringify({ success: true, message: "Message broadcasted" }), { status: 200 });
+  } catch (error) {
+    console.error("POST Error:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
+  }
+}
+
